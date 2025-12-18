@@ -89,7 +89,7 @@ with st.spinner("🔄 Loading data..."):
     data, movies = load_data()
 
 # ======================================================
-# SIDEBAR INFO
+# SIDEBAR
 # ======================================================
 with st.sidebar:
     st.header("📌 Project Details")
@@ -119,6 +119,12 @@ user_item = data.pivot_table(
 sparse_matrix = csr_matrix(user_item.values)
 
 # ======================================================
+# VALID MOVIES (CRITICAL FIX)
+# ======================================================
+valid_movie_ids = set(user_item.columns)
+valid_movies = movies[movies["movieId"].isin(valid_movie_ids)]
+
+# ======================================================
 # ITEM-ITEM COSINE SIMILARITY
 # ======================================================
 with st.spinner("⚙️ Computing similarity matrix..."):
@@ -134,7 +140,7 @@ col1, col2 = st.columns([2, 1])
 with col1:
     movie_selected = st.selectbox(
         "Select a movie:",
-        movies["title"].sort_values().values
+        valid_movies["title"].sort_values().values
     )
 
 with col2:
@@ -149,8 +155,11 @@ with col2:
 # RECOMMENDATION FUNCTION
 # ======================================================
 def recommend_movies(movie_title, top_n):
-    movie_id = movies[movies["title"] == movie_title]["movieId"].values[0]
-    movie_idx = list(user_item.columns).index(movie_id)
+    movie_id = valid_movies[
+        valid_movies["title"] == movie_title
+    ]["movieId"].values[0]
+
+    movie_idx = user_item.columns.get_loc(movie_id)
 
     similarity_scores = list(enumerate(item_similarity[movie_idx]))
     similarity_scores = sorted(
@@ -165,8 +174,6 @@ def recommend_movies(movie_title, top_n):
 # ======================================================
 # BUTTON ACTION
 # ======================================================
-st.markdown("")
-
 if st.button("✨ Recommend Movies"):
     with st.spinner("🎯 Finding the best recommendations for you..."):
         recommendations = recommend_movies(
@@ -178,7 +185,7 @@ if st.button("✨ Recommend Movies"):
 
     st.subheader("🍿 Recommended Movies For You")
 
-    for idx, row in recommendations.iterrows():
+    for _, row in recommendations.iterrows():
         st.markdown(
             f"""
             <div style="
