@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
+import plotly.express as px
 
 # ======================================================
 # PAGE CONFIG
@@ -13,27 +13,20 @@ st.set_page_config(
 )
 
 # ======================================================
-# STYLING (CLEAN, PROFESSIONAL, READABLE)
+# STYLING
 # ======================================================
 st.markdown("""
 <style>
-body {
-    background-color: #f4f6f9;
-}
-h1 {
-    color: #111827;
-    text-align: center;
-}
-h2, h3 {
-    color: #1f2937;
-}
+body { background-color: #f4f6f9; }
+h1 { color: #111827; text-align: center; }
+h3 { color: #374151; text-align: center; }
 .movie-card {
     background-color: #ffffff;
     padding: 16px;
-    border-radius: 10px;
-    margin-bottom: 12px;
+    border-radius: 12px;
+    margin-bottom: 14px;
     border-left: 6px solid #f59e0b;
-    box-shadow: 0px 4px 10px rgba(0,0,0,0.05);
+    box-shadow: 0px 6px 14px rgba(0,0,0,0.08);
 }
 .movie-title {
     font-size: 18px;
@@ -41,7 +34,7 @@ h2, h3 {
     color: #111827;
 }
 .movie-rating {
-    color: #065f46;
+    color: #047857;
     font-weight: bold;
 }
 </style>
@@ -51,7 +44,7 @@ h2, h3 {
 # HEADER
 # ======================================================
 st.markdown("<h1>🎬 Movie Recommendation System</h1>", unsafe_allow_html=True)
-st.markdown("<h3 style='text-align:center;'>Foundations of Big Data Analytics using Python (FBDAP)</h3>", unsafe_allow_html=True)
+st.markdown("<h3>Foundations of Big Data Analytics with Python (FBDA)</h3>", unsafe_allow_html=True)
 st.divider()
 
 # ======================================================
@@ -114,10 +107,10 @@ with st.sidebar:
 # ======================================================
 # KPI METRICS
 # ======================================================
-col1, col2, col3 = st.columns(3)
-col1.metric("🎥 Total Movies", movies.shape[0])
-col2.metric("👤 Users", data["userId"].nunique())
-col3.metric("⭐ Avg Rating", round(data["rating"].mean(), 2))
+c1, c2, c3 = st.columns(3)
+c1.metric("🎥 Movies", movies.shape[0])
+c2.metric("👤 Users", data["userId"].nunique())
+c3.metric("⭐ Avg Rating", round(data["rating"].mean(), 2))
 
 st.divider()
 
@@ -125,27 +118,21 @@ st.divider()
 # TABS
 # ======================================================
 tab1, tab2, tab3 = st.tabs(
-    ["🎬 Genre-Based Recommendation", "📊 Data Insights", "ℹ️ About Project"]
+    ["🎬 Genre Recommendations", "📊 Interactive Insights", "ℹ️ About"]
 )
 
 # ======================================================
-# TAB 1: GENRE-BASED RECOMMENDER
+# TAB 1: GENRE RECOMMENDER
 # ======================================================
 with tab1:
     st.subheader("🎭 Select a Genre")
 
-    selected_genre = st.selectbox(
-        "Choose a genre:",
-        sorted(genre_cols[1:]),
-        help="Select a genre to get top-rated movies"
+    genre = st.selectbox(
+        "Choose a genre",
+        sorted(genre_cols[1:])
     )
 
-    top_n = st.slider(
-        "Number of recommendations",
-        min_value=3,
-        max_value=10,
-        value=5
-    )
+    top_n = st.slider("Number of recommendations", 3, 10, 5)
 
     def recommend_by_genre(genre, top_n):
         genre_movies = data[data[genre] == 1]
@@ -161,11 +148,10 @@ with tab1:
         return avg_ratings.head(top_n)
 
     if st.button("🎯 Recommend Movies"):
-        recommendations = recommend_by_genre(selected_genre, top_n)
+        recs = recommend_by_genre(genre, top_n)
+        st.success(f"Top {top_n} {genre} Movies")
 
-        st.success(f"Top {top_n} {selected_genre} Movies")
-
-        for i, row in recommendations.iterrows():
+        for i, row in recs.iterrows():
             st.markdown(
                 f"""
                 <div class="movie-card">
@@ -177,54 +163,70 @@ with tab1:
             )
 
 # ======================================================
-# TAB 2: DATA INSIGHTS
+# TAB 2: INTERACTIVE INSIGHTS (PLOTLY)
 # ======================================================
 with tab2:
     st.subheader("📊 Ratings Distribution")
-
-    fig, ax = plt.subplots()
-    data["rating"].value_counts().sort_index().plot(kind="bar", ax=ax)
-    ax.set_xlabel("Rating")
-    ax.set_ylabel("Count")
-    st.pyplot(fig)
+    fig1 = px.bar(
+        data["rating"].value_counts().sort_index(),
+        labels={"value": "Count", "index": "Rating"},
+        title="Distribution of Ratings",
+        color_discrete_sequence=["#f59e0b"]
+    )
+    st.plotly_chart(fig1, use_container_width=True)
 
     st.subheader("🎥 Top 10 Most Rated Movies")
-
     top_movies = (
         data.groupby("title")["rating"]
         .count()
         .sort_values(ascending=False)
         .head(10)
+        .reset_index()
     )
 
-    fig2, ax2 = plt.subplots()
-    top_movies.plot(kind="barh", ax=ax2)
-    ax2.invert_yaxis()
-    ax2.set_xlabel("Number of Ratings")
-    st.pyplot(fig2)
+    fig2 = px.bar(
+        top_movies,
+        x="rating",
+        y="title",
+        orientation="h",
+        title="Top 10 Most Rated Movies",
+        color="rating",
+        color_continuous_scale="goldenrod"
+    )
+    st.plotly_chart(fig2, use_container_width=True)
+
+    st.subheader("🎭 Genre Popularity")
+    genre_counts = data[genre_cols[1:]].sum().reset_index()
+    genre_counts.columns = ["Genre", "Count"]
+
+    fig3 = px.pie(
+        genre_counts,
+        names="Genre",
+        values="Count",
+        title="Genre Distribution",
+        hole=0.4
+    )
+    st.plotly_chart(fig3, use_container_width=True)
 
 # ======================================================
-# TAB 3: ABOUT PROJECT
+# TAB 3: ABOUT
 # ======================================================
 with tab3:
-    st.subheader("ℹ️ Project Overview")
-
     st.markdown("""
-    This **Movie Recommendation System** was developed as part of the  
-    **Foundations of Big Data Analytics with Python (FBDA)** course.
+    ### 📌 Project Overview
+    This **Movie Recommendation System** demonstrates:
 
-    ### Techniques Used
-    - **Content-Based Filtering** using movie genres  
-    - **Collaborative Filtering** using user ratings  
-    - **Cosine Similarity** for measuring movie similarity  
-    - **Matrix Factorization (SVD)** during model development  
-    - **Streamlit** for interactive deployment  
+    - Content-based filtering using genres  
+    - Collaborative filtering using ratings  
+    - Cosine similarity for similarity computation  
+    - Matrix factorization (SVD) in model development  
+    - Interactive deployment using Streamlit  
 
-    ### Key Features
-    - Real-world dataset from Kaggle
-    - Interactive dashboard
-    - Clean and professional UI
-    - Fully deployable web application
+    ### 🚀 Key Highlights
+    - Real-world Kaggle dataset  
+    - Interactive and professional dashboard  
+    - Genre-based movie discovery  
+    - Analytics-driven insights  
     """)
 
 # ======================================================
@@ -233,7 +235,7 @@ with tab3:
 st.divider()
 st.markdown(
     "<p style='text-align:center;color:#6b7280;'>"
-    "FBDA Project | MovieLens 100K | Deployed with Streamlit"
+    "FBDA Project | MovieLens 100K | Interactive Dashboard with Plotly"
     "</p>",
     unsafe_allow_html=True
 )
