@@ -54,7 +54,7 @@ h3 {
 # HEADER
 # ======================================================
 st.markdown("<h1>🎬 Movie Recommendation System</h1>", unsafe_allow_html=True)
-st.markdown("<h3>Foundations of Big Data Analytics with Python (FBDA)</h3>", unsafe_allow_html=True)
+st.markdown("<h3>Foundations of Big Data Analytics with Python (FBDAP)</h3>", unsafe_allow_html=True)
 st.divider()
 
 # ======================================================
@@ -169,5 +169,6 @@ st.markdown(
     "</p>",
     unsafe_allow_html=True
 )
+
 
 
