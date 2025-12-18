@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.express as px
+from sklearn.metrics.pairwise import cosine_similarity
+from scipy.sparse import csr_matrix
 
 # ======================================================
 # PAGE CONFIG
@@ -13,7 +15,7 @@ st.set_page_config(
 )
 
 # ======================================================
-# STYLING (CLEAN & READABLE)
+# STYLING
 # ======================================================
 st.markdown("""
 <style>
@@ -31,7 +33,6 @@ h3 { color: #374151; text-align: center; }
 .movie-title {
     font-size: 18px;
     font-weight: bold;
-    color: #111827;
 }
 .movie-rating {
     color: #047857;
@@ -44,7 +45,7 @@ h3 { color: #374151; text-align: center; }
 # HEADER
 # ======================================================
 st.markdown("<h1>🎬 Movie Recommendation System</h1>", unsafe_allow_html=True)
-st.markdown("<h3>Foundations of Big Data Analytics using Python (FBDAP)</h3>", unsafe_allow_html=True)
+st.markdown("<h3>Hybrid Recommendation Engine (FBDA)</h3>", unsafe_allow_html=True)
 st.divider()
 
 # ======================================================
@@ -86,151 +87,90 @@ def load_data():
 data, movies, genre_cols = load_data()
 
 # ======================================================
+# USER-ITEM MATRIX (COLLABORATIVE FILTERING)
+# ======================================================
+user_item = data.pivot_table(
+    index="userId",
+    columns="movieId",
+    values="rating"
+).fillna(0)
+
+sparse_matrix = csr_matrix(user_item.values)
+item_similarity = cosine_similarity(sparse_matrix.T)
+
+# ======================================================
 # SIDEBAR
 # ======================================================
 with st.sidebar:
-    st.header("📌 Project Info")
-    st.markdown("""
-    **Course:** FBDA  
-    **Dataset:** MovieLens 100K  
-    **Sample Size:** 10,001  
-    **Group ID:** 244060  
-    """)
-    st.markdown("---")
-    st.markdown("👥 **Group Members**")
-    st.markdown("""
-    - 065024  
-    - 065040  
-    - 065060  
-    """)
+    st.header("⚙️ Hybrid Settings")
+    selected_genre = st.selectbox("Select Genre", sorted(genre_cols[1:]))
+    alpha = st.slider(
+        "Weight: Content vs Collaborative",
+        0.0, 1.0, 0.6,
+        help="Higher value favors genre preference"
+    )
+    top_n = st.slider("Number of Recommendations", 3, 10, 5)
 
 # ======================================================
-# KPI METRICS
+# HYBRID RECOMMENDATION LOGIC
 # ======================================================
-c1, c2, c3 = st.columns(3)
-c1.metric("🎥 Movies", movies.shape[0])
-c2.metric("👤 Users", data["userId"].nunique())
-c3.metric("⭐ Avg Rating", round(data["rating"].mean(), 2))
-
-st.divider()
-
-# ======================================================
-# TABS
-# ======================================================
-tab1, tab2, tab3 = st.tabs(
-    ["🎬 Genre Recommendations", "📊 Interactive Insights", "ℹ️ About"]
-)
-
-# ======================================================
-# TAB 1: GENRE-BASED RECOMMENDATION
-# ======================================================
-with tab1:
-    st.subheader("🎭 Select a Genre")
-
-    genre = st.selectbox(
-        "Choose a genre",
-        sorted(genre_cols[1:])
+def hybrid_recommendation(genre, alpha, top_n):
+    # Content-based score
+    genre_movies = movies[movies[genre] == 1]
+    avg_ratings = (
+        data.groupby("movieId")["rating"]
+        .mean()
+        .reset_index(name="avg_rating")
     )
 
-    top_n = st.slider("Number of recommendations", 3, 10, 5)
+    content_scores = genre_movies.merge(
+        avg_ratings, on="movieId", how="left"
+    )
 
-    def recommend_by_genre(genre, top_n):
-        genre_movies = data[data[genre] == 1]
+    content_scores["content_score"] = content_scores["avg_rating"] / 5
 
-        avg_ratings = (
-            genre_movies.groupby("title")["rating"]
-            .mean()
-            .reset_index()
-            .rename(columns={"rating": "Average Rating"})
-            .sort_values(by="Average Rating", ascending=False)
-        )
+    # Collaborative score
+    movie_indices = list(user_item.columns)
+    sim_scores = np.mean(item_similarity, axis=0)
 
-        return avg_ratings.head(top_n)
+    collab_scores = pd.DataFrame({
+        "movieId": movie_indices,
+        "collab_score": sim_scores
+    })
 
-    if st.button("🎯 Recommend Movies"):
-        recs = recommend_by_genre(genre, top_n)
-        st.success(f"Top {top_n} {genre} Movies")
+    # Hybrid merge
+    hybrid = content_scores.merge(collab_scores, on="movieId")
+    hybrid["hybrid_score"] = (
+        alpha * hybrid["content_score"] +
+        (1 - alpha) * hybrid["collab_score"]
+    )
 
-        for i, row in recs.iterrows():
-            st.markdown(
-                f"""
-                <div class="movie-card">
-                    <div class="movie-title">#{i+1} 🎬 {row['title']}</div>
-                    <div class="movie-rating">⭐ Rating: {row['Average Rating']:.2f}</div>
+    return hybrid.sort_values(
+        by="hybrid_score", ascending=False
+    ).head(top_n)
+
+# ======================================================
+# MAIN OUTPUT
+# ======================================================
+st.subheader("🎯 Hybrid Movie Recommendations")
+
+if st.button("🚀 Generate Recommendations"):
+    results = hybrid_recommendation(selected_genre, alpha, top_n)
+    st.success("Hybrid Recommendations Ready")
+
+    for i, row in results.iterrows():
+        st.markdown(
+            f"""
+            <div class="movie-card">
+                <div class="movie-title">#{i+1} 🎬 {row['title']}</div>
+                <div class="movie-rating">
+                    ⭐ Avg Rating: {row['avg_rating']:.2f}<br>
+                    🔀 Hybrid Score: {row['hybrid_score']:.3f}
                 </div>
-                """,
-                unsafe_allow_html=True
-            )
-
-# ======================================================
-# TAB 2: INTERACTIVE INSIGHTS (PLOTLY)
-# ======================================================
-with tab2:
-    st.subheader("📊 Ratings Distribution")
-
-    fig1 = px.bar(
-        data["rating"].value_counts().sort_index(),
-        labels={"value": "Count", "index": "Rating"},
-        title="Distribution of Ratings",
-        color_discrete_sequence=["#f59e0b"]
-    )
-    st.plotly_chart(fig1, use_container_width=True)
-
-    st.subheader("🎥 Top 10 Most Rated Movies")
-
-    top_movies = (
-        data.groupby("title")["rating"]
-        .count()
-        .sort_values(ascending=False)
-        .head(10)
-        .reset_index()
-    )
-
-    fig2 = px.bar(
-        top_movies,
-        x="rating",
-        y="title",
-        orientation="h",
-        title="Top 10 Most Rated Movies",
-        color="rating",
-        color_continuous_scale="YlOrBr"
-    )
-    st.plotly_chart(fig2, use_container_width=True)
-
-    st.subheader("🎭 Genre Popularity")
-
-    genre_counts = data[genre_cols[1:]].sum().reset_index()
-    genre_counts.columns = ["Genre", "Count"]
-
-    fig3 = px.pie(
-        genre_counts,
-        names="Genre",
-        values="Count",
-        title="Genre Distribution",
-        hole=0.4
-    )
-    st.plotly_chart(fig3, use_container_width=True)
-
-# ======================================================
-# TAB 3: ABOUT
-# ======================================================
-with tab3:
-    st.markdown("""
-    ### 📌 Project Overview
-    This **Movie Recommendation System** demonstrates:
-
-    - Content-based filtering using genres  
-    - Collaborative filtering using user ratings  
-    - Cosine similarity for similarity measurement  
-    - Matrix factorization (SVD) during model development  
-    - Interactive deployment using Streamlit  
-
-    ### 🚀 Key Highlights
-    - Real-world Kaggle dataset  
-    - Interactive Plotly visualizations  
-    - Professional multi-tab dashboard  
-    - Genre-based movie discovery  
-    """)
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
 # ======================================================
 # FOOTER
@@ -238,8 +178,7 @@ with tab3:
 st.divider()
 st.markdown(
     "<p style='text-align:center;color:#6b7280;'>"
-    "FBDA Project | MovieLens 100K | Interactive Dashboard"
+    "Hybrid Recommendation System | FBDA | MovieLens 100K"
     "</p>",
     unsafe_allow_html=True
 )
-
