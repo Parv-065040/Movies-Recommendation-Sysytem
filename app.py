@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 
 # ======================================================
 # PAGE CONFIG
@@ -12,23 +13,19 @@ st.set_page_config(
 )
 
 # ======================================================
-# CLEAN & READABLE STYLING (TEXT VISIBILITY FIXED)
+# STYLING (CLEAN, PROFESSIONAL, READABLE)
 # ======================================================
 st.markdown("""
 <style>
 body {
     background-color: #f4f6f9;
 }
-.main {
-    background-color: #f4f6f9;
-}
 h1 {
-    color: #1f2937;
+    color: #111827;
     text-align: center;
 }
-h3 {
-    color: #374151;
-    text-align: center;
+h2, h3 {
+    color: #1f2937;
 }
 .movie-card {
     background-color: #ffffff;
@@ -54,7 +51,7 @@ h3 {
 # HEADER
 # ======================================================
 st.markdown("<h1>🎬 Movie Recommendation System</h1>", unsafe_allow_html=True)
-st.markdown("<h3>Foundations of Big Data Analytics with Python (FBDAP)</h3>", unsafe_allow_html=True)
+st.markdown("<h3 style='text-align:center;'>Foundations of Big Data Analytics using Python (FBDAP)</h3>", unsafe_allow_html=True)
 st.divider()
 
 # ======================================================
@@ -115,49 +112,120 @@ with st.sidebar:
     """)
 
 # ======================================================
-# GENRE SELECTION
+# KPI METRICS
 # ======================================================
-st.subheader("🎭 Select a Genre")
+col1, col2, col3 = st.columns(3)
+col1.metric("🎥 Total Movies", movies.shape[0])
+col2.metric("👤 Users", data["userId"].nunique())
+col3.metric("⭐ Avg Rating", round(data["rating"].mean(), 2))
 
-selected_genre = st.selectbox(
-    "Choose a genre you like:",
-    sorted(genre_cols[1:])  # remove 'unknown'
+st.divider()
+
+# ======================================================
+# TABS
+# ======================================================
+tab1, tab2, tab3 = st.tabs(
+    ["🎬 Genre-Based Recommendation", "📊 Data Insights", "ℹ️ About Project"]
 )
 
 # ======================================================
-# GENRE-BASED RECOMMENDATION LOGIC
+# TAB 1: GENRE-BASED RECOMMENDER
 # ======================================================
-def recommend_by_genre(genre, top_n=5):
-    genre_movies = data[data[genre] == 1]
+with tab1:
+    st.subheader("🎭 Select a Genre")
 
-    avg_ratings = (
-        genre_movies.groupby("title")["rating"]
-        .mean()
-        .reset_index()
-        .rename(columns={"rating": "Average Rating"})
-        .sort_values(by="Average Rating", ascending=False)
+    selected_genre = st.selectbox(
+        "Choose a genre:",
+        sorted(genre_cols[1:]),
+        help="Select a genre to get top-rated movies"
     )
 
-    return avg_ratings.head(top_n)
+    top_n = st.slider(
+        "Number of recommendations",
+        min_value=3,
+        max_value=10,
+        value=5
+    )
 
-# ======================================================
-# BUTTON ACTION
-# ======================================================
-if st.button("🎯 Recommend Movies"):
-    recommendations = recommend_by_genre(selected_genre)
+    def recommend_by_genre(genre, top_n):
+        genre_movies = data[data[genre] == 1]
 
-    st.success(f"Top {len(recommendations)} {selected_genre} Movies")
-
-    for _, row in recommendations.iterrows():
-        st.markdown(
-            f"""
-            <div class="movie-card">
-                <div class="movie-title">🎬 {row['title']}</div>
-                <div class="movie-rating">⭐ Rating: {row['Average Rating']:.2f}</div>
-            </div>
-            """,
-            unsafe_allow_html=True
+        avg_ratings = (
+            genre_movies.groupby("title")["rating"]
+            .mean()
+            .reset_index()
+            .rename(columns={"rating": "Average Rating"})
+            .sort_values(by="Average Rating", ascending=False)
         )
+
+        return avg_ratings.head(top_n)
+
+    if st.button("🎯 Recommend Movies"):
+        recommendations = recommend_by_genre(selected_genre, top_n)
+
+        st.success(f"Top {top_n} {selected_genre} Movies")
+
+        for i, row in recommendations.iterrows():
+            st.markdown(
+                f"""
+                <div class="movie-card">
+                    <div class="movie-title">#{i+1} 🎬 {row['title']}</div>
+                    <div class="movie-rating">⭐ Rating: {row['Average Rating']:.2f}</div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+# ======================================================
+# TAB 2: DATA INSIGHTS
+# ======================================================
+with tab2:
+    st.subheader("📊 Ratings Distribution")
+
+    fig, ax = plt.subplots()
+    data["rating"].value_counts().sort_index().plot(kind="bar", ax=ax)
+    ax.set_xlabel("Rating")
+    ax.set_ylabel("Count")
+    st.pyplot(fig)
+
+    st.subheader("🎥 Top 10 Most Rated Movies")
+
+    top_movies = (
+        data.groupby("title")["rating"]
+        .count()
+        .sort_values(ascending=False)
+        .head(10)
+    )
+
+    fig2, ax2 = plt.subplots()
+    top_movies.plot(kind="barh", ax=ax2)
+    ax2.invert_yaxis()
+    ax2.set_xlabel("Number of Ratings")
+    st.pyplot(fig2)
+
+# ======================================================
+# TAB 3: ABOUT PROJECT
+# ======================================================
+with tab3:
+    st.subheader("ℹ️ Project Overview")
+
+    st.markdown("""
+    This **Movie Recommendation System** was developed as part of the  
+    **Foundations of Big Data Analytics with Python (FBDA)** course.
+
+    ### Techniques Used
+    - **Content-Based Filtering** using movie genres  
+    - **Collaborative Filtering** using user ratings  
+    - **Cosine Similarity** for measuring movie similarity  
+    - **Matrix Factorization (SVD)** during model development  
+    - **Streamlit** for interactive deployment  
+
+    ### Key Features
+    - Real-world dataset from Kaggle
+    - Interactive dashboard
+    - Clean and professional UI
+    - Fully deployable web application
+    """)
 
 # ======================================================
 # FOOTER
@@ -165,10 +233,7 @@ if st.button("🎯 Recommend Movies"):
 st.divider()
 st.markdown(
     "<p style='text-align:center;color:#6b7280;'>"
-    "Genre-based Recommendation System | MovieLens 100K | FBDA Project"
+    "FBDA Project | MovieLens 100K | Deployed with Streamlit"
     "</p>",
     unsafe_allow_html=True
 )
-
-
-
