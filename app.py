@@ -13,7 +13,7 @@ st.set_page_config(
 )
 
 # ======================================================
-# STYLING
+# STYLING (CLEAN & READABLE)
 # ======================================================
 st.markdown("""
 <style>
@@ -122,7 +122,7 @@ tab1, tab2, tab3 = st.tabs(
 )
 
 # ======================================================
-# TAB 1: GENRE RECOMMENDER
+# TAB 1: GENRE-BASED RECOMMENDATION
 # ======================================================
 with tab1:
     st.subheader("🎭 Select a Genre")
@@ -167,6 +167,7 @@ with tab1:
 # ======================================================
 with tab2:
     st.subheader("📊 Ratings Distribution")
+
     fig1 = px.bar(
         data["rating"].value_counts().sort_index(),
         labels={"value": "Count", "index": "Rating"},
@@ -176,6 +177,7 @@ with tab2:
     st.plotly_chart(fig1, use_container_width=True)
 
     st.subheader("🎥 Top 10 Most Rated Movies")
+
     top_movies = (
         data.groupby("title")["rating"]
         .count()
@@ -191,11 +193,12 @@ with tab2:
         orientation="h",
         title="Top 10 Most Rated Movies",
         color="rating",
-        color_continuous_scale="goldenrod"
+        color_continuous_scale="YlOrBr"
     )
     st.plotly_chart(fig2, use_container_width=True)
 
     st.subheader("🎭 Genre Popularity")
+
     genre_counts = data[genre_cols[1:]].sum().reset_index()
     genre_counts.columns = ["Genre", "Count"]
 
@@ -217,16 +220,16 @@ with tab3:
     This **Movie Recommendation System** demonstrates:
 
     - Content-based filtering using genres  
-    - Collaborative filtering using ratings  
-    - Cosine similarity for similarity computation  
-    - Matrix factorization (SVD) in model development  
+    - Collaborative filtering using user ratings  
+    - Cosine similarity for similarity measurement  
+    - Matrix factorization (SVD) during model development  
     - Interactive deployment using Streamlit  
 
     ### 🚀 Key Highlights
     - Real-world Kaggle dataset  
-    - Interactive and professional dashboard  
+    - Interactive Plotly visualizations  
+    - Professional multi-tab dashboard  
     - Genre-based movie discovery  
-    - Analytics-driven insights  
     """)
 
 # ======================================================
@@ -235,7 +238,7 @@ with tab3:
 st.divider()
 st.markdown(
     "<p style='text-align:center;color:#6b7280;'>"
-    "FBDA Project | MovieLens 100K | Interactive Dashboard with Plotly"
+    "FBDA Project | MovieLens 100K | Interactive Dashboard"
     "</p>",
     unsafe_allow_html=True
 )
