@@ -23,33 +23,49 @@ GROUP_ID = 244060
 SAMPLE_SIZE = 10001
 
 # ======================================================
-# STYLING
+# STYLING (DARK + LIGHT THEME SAFE)
 # ======================================================
 st.markdown("""
 <style>
-body { background-color: #f4f6f9; }
-h1 { text-align:center; color:#111827; }
-h3 { text-align:center; color:#374151; }
-.movie-card {
-    background-color:#ffffff;
-    padding:16px;
-    border-radius:12px;
-    margin-bottom:16px;
-    box-shadow:0px 6px 14px rgba(0,0,0,0.08);
+/* Base */
+body {
+    background-color: #0f1117;
 }
-.movie-title {
-    font-size:20px;
-    font-weight:bold;
+h1, h3 {
+    text-align: center;
+    color: #f9fafb !important;
 }
-.movie-rating {
-    color:#047857;
-    font-weight:bold;
-}
+
+/* Result header */
 .result-header {
-    font-size:22px;
-    font-weight:700;
-    color:#1f2937;
-    margin-bottom:20px;
+    font-size: 22px;
+    font-weight: 700;
+    color: #f9fafb !important;
+    margin-bottom: 20px;
+}
+
+/* Movie card */
+.movie-card {
+    background-color: #111827;
+    padding: 18px;
+    border-radius: 14px;
+    margin-bottom: 18px;
+    border: 1px solid #374151;
+    box-shadow: 0px 6px 14px rgba(0,0,0,0.4);
+}
+
+/* Movie title */
+.movie-title {
+    font-size: 20px;
+    font-weight: bold;
+    color: #f9fafb !important;
+}
+
+/* Movie rating */
+.movie-rating {
+    color: #10b981;
+    font-weight: bold;
+    margin-top: 6px;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -67,13 +83,16 @@ st.divider()
 @st.cache_data
 def load_data():
     ratings = pd.read_csv(
-        "u.data", sep="\t",
+        "u.data",
+        sep="\t",
         names=["userId", "movieId", "rating", "timestamp"]
     ).sample(n=SAMPLE_SIZE, random_state=GROUP_ID)
 
     movies = pd.read_csv(
-        "u.item", sep="|",
-        encoding="latin-1", header=None
+        "u.item",
+        sep="|",
+        encoding="latin-1",
+        header=None
     )
 
     genre_cols = [
@@ -120,13 +139,13 @@ def clean_title(title):
 @st.cache_data
 def get_movie_poster(title):
     try:
-        clean = clean_title(title)
+        query = clean_title(title)
         url = "https://api.themoviedb.org/3/search/movie"
-        params = {"api_key": TMDB_API_KEY, "query": clean}
-        r = requests.get(url, params=params, timeout=5).json()
+        params = {"api_key": TMDB_API_KEY, "query": query}
+        res = requests.get(url, params=params, timeout=5).json()
 
-        if r.get("results"):
-            poster = r["results"][0].get("poster_path")
+        if res.get("results"):
+            poster = res["results"][0].get("poster_path")
             if poster:
                 return f"https://image.tmdb.org/t/p/w500{poster}"
     except:
@@ -134,7 +153,7 @@ def get_movie_poster(title):
     return FALLBACK_POSTER
 
 # ======================================================
-# SIDEBAR
+# SIDEBAR CONTROLS
 # ======================================================
 with st.sidebar:
     st.header("⚙️ Controls")
@@ -150,7 +169,8 @@ def hybrid_recommendation(genre, alpha, top_n):
 
     avg_ratings = (
         data.groupby("movieId")["rating"]
-        .mean().reset_index(name="avg_rating")
+        .mean()
+        .reset_index(name="avg_rating")
     )
 
     content = genre_movies.merge(avg_ratings, on="movieId")
@@ -178,9 +198,7 @@ tab1, tab2, tab3 = st.tabs(
 
 # ---------------- TAB 1 ----------------
 with tab1:
-    generate = st.button("🚀 Generate Recommendations")
-
-    if generate:
+    if st.button("🚀 Generate Recommendations"):
         results = hybrid_recommendation(genre, alpha, top_n)
 
         st.markdown(
@@ -235,14 +253,14 @@ with tab2:
 with tab3:
     st.markdown("""
     ### 📌 About the Project
-    This dashboard implements a **Hybrid Recommendation System** combining:
+    This dashboard implements a **Hybrid Recommendation System** using:
     - Content-Based Filtering (Genres)
     - Collaborative Filtering (User Ratings)
     - Cosine Similarity
-    - TMDB API integration for posters
+    - TMDB API for movie posters
     - Interactive Plotly visualizations
 
-    Developed for **Foundations of Big Data Analytics with Python (FBDA)**.
+    Built for **Foundations of Big Data Analytics with Python (FBDA)**.
     """)
 
 # ======================================================
@@ -250,7 +268,7 @@ with tab3:
 # ======================================================
 st.divider()
 st.markdown(
-    "<p style='text-align:center;color:gray;'>"
+    "<p style='text-align:center;color:#9ca3af;'>"
     "Hybrid Recommendation Dashboard | FBDA Project"
     "</p>",
     unsafe_allow_html=True
