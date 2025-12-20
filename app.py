@@ -23,29 +23,17 @@ GROUP_ID = 244060
 SAMPLE_SIZE = 10001
 
 # ======================================================
-# THEME-SAFE STYLING (LIGHT + DARK)
+# THEME-SAFE STYLING
 # ======================================================
 st.markdown("""
 <style>
-/* Use Streamlit theme variables */
 :root {
     --card-bg: var(--secondary-background-color);
     --card-border: rgba(120,120,120,0.25);
 }
 
-/* Headings */
-h1, h3 {
-    text-align: center;
-}
+h1, h3 { text-align: center; }
 
-/* Result header */
-.result-header {
-    font-size: 22px;
-    font-weight: 700;
-    margin-bottom: 20px;
-}
-
-/* Movie card */
 .movie-card {
     background-color: var(--card-bg);
     padding: 16px;
@@ -54,16 +42,25 @@ h1, h3 {
     border: 1px solid var(--card-border);
 }
 
-/* Movie title */
 .movie-title {
     font-size: 20px;
     font-weight: bold;
 }
 
-/* Rating text */
 .movie-rating {
     font-weight: bold;
-    opacity: 0.9;
+}
+
+.explain-box {
+    font-size: 14px;
+    margin-top: 8px;
+    opacity: 0.85;
+}
+
+.result-header {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 20px;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -81,16 +78,13 @@ st.divider()
 @st.cache_data
 def load_data():
     ratings = pd.read_csv(
-        "u.data",
-        sep="\t",
+        "u.data", sep="\t",
         names=["userId", "movieId", "rating", "timestamp"]
     ).sample(n=SAMPLE_SIZE, random_state=GROUP_ID)
 
     movies = pd.read_csv(
-        "u.item",
-        sep="|",
-        encoding="latin-1",
-        header=None
+        "u.item", sep="|",
+        encoding="latin-1", header=None
     )
 
     genre_cols = [
@@ -114,7 +108,6 @@ c1, c2, c3 = st.columns(3)
 c1.metric("🎥 Movies", movies.shape[0])
 c2.metric("👤 Users", data["userId"].nunique())
 c3.metric("⭐ Avg Rating", round(data["rating"].mean(), 2))
-
 st.divider()
 
 # ======================================================
@@ -141,7 +134,6 @@ def get_movie_poster(title):
         url = "https://api.themoviedb.org/3/search/movie"
         params = {"api_key": TMDB_API_KEY, "query": query}
         r = requests.get(url, params=params, timeout=5).json()
-
         if r.get("results"):
             poster = r["results"][0].get("poster_path")
             if poster:
@@ -167,8 +159,7 @@ def hybrid_recommendation(genre, alpha, top_n):
 
     avg_ratings = (
         data.groupby("movieId")["rating"]
-        .mean()
-        .reset_index(name="avg_rating")
+        .mean().reset_index(name="avg_rating")
     )
 
     content = genre_movies.merge(avg_ratings, on="movieId")
@@ -204,12 +195,22 @@ with tab1:
             unsafe_allow_html=True
         )
 
+        # ---- CSV EXPORT ----
+        export_df = results[["title","avg_rating","hybrid_score"]]
+        st.download_button(
+            label="📤 Download Recommendations (CSV)",
+            data=export_df.to_csv(index=False),
+            file_name="movie_recommendations.csv",
+            mime="text/csv"
+        )
+
         for i, row in results.iterrows():
             poster = get_movie_poster(row["title"])
 
             col1, col2 = st.columns([1, 3])
             with col1:
                 st.image(poster, width=150)
+
             with col2:
                 st.markdown(
                     f"""
@@ -218,6 +219,12 @@ with tab1:
                         <div class="movie-rating">
                             ⭐ Rating: {row['avg_rating']:.2f}<br>
                             🔀 Hybrid Score: {row['hybrid_score']:.3f}
+                        </div>
+                        <div class="explain-box">
+                            ✅ Matches <b>{genre}</b> genre<br>
+                            ⭐ Highly rated by similar users<br>
+                            🤝 Similar user rating patterns (Cosine Similarity)<br>
+                            ⚖️ Balanced using hybrid weighting
                         </div>
                     </div>
                     """,
@@ -251,14 +258,15 @@ with tab2:
 with tab3:
     st.markdown("""
     ### 📌 About the Project
-    This dashboard implements a **Hybrid Recommendation System** using:
+    This system implements an **Explainable Hybrid Recommendation Engine** using:
     - Content-Based Filtering (Genres)
     - Collaborative Filtering (User Ratings)
     - Cosine Similarity
-    - TMDB API for posters
-    - Interactive Plotly visualizations
+    - Explainable AI concepts
+    - TMDB API integration
+    - CSV export for business use
 
-    Developed for **Foundations of Big Data Analytics with Python (FBDA)**.
+    Built for **Foundations of Big Data Analytics Using Python (FBDAP)**.
     """)
 
 # ======================================================
@@ -267,7 +275,7 @@ with tab3:
 st.divider()
 st.markdown(
     "<p style='text-align:center; opacity:0.7;'>"
-    "Hybrid Recommendation Dashboard | FBDA Project"
+    "Hybrid Recommendation Dashboard | FBDAP Project"
     "</p>",
     unsafe_allow_html=True
 )
