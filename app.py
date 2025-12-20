@@ -8,7 +8,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from scipy.sparse import csr_matrix
 
 # ======================================================
-# CONFIG
+# PAGE CONFIG
 # ======================================================
 st.set_page_config(
     page_title="Movie Recommendation System",
@@ -23,49 +23,47 @@ GROUP_ID = 244060
 SAMPLE_SIZE = 10001
 
 # ======================================================
-# STYLING (DARK + LIGHT THEME SAFE)
+# THEME-SAFE STYLING (LIGHT + DARK)
 # ======================================================
 st.markdown("""
 <style>
-/* Base */
-body {
-    background-color: #0f1117;
+/* Use Streamlit theme variables */
+:root {
+    --card-bg: var(--secondary-background-color);
+    --card-border: rgba(120,120,120,0.25);
 }
+
+/* Headings */
 h1, h3 {
     text-align: center;
-    color: #f9fafb !important;
 }
 
 /* Result header */
 .result-header {
     font-size: 22px;
     font-weight: 700;
-    color: #f9fafb !important;
     margin-bottom: 20px;
 }
 
 /* Movie card */
 .movie-card {
-    background-color: #111827;
-    padding: 18px;
+    background-color: var(--card-bg);
+    padding: 16px;
     border-radius: 14px;
-    margin-bottom: 18px;
-    border: 1px solid #374151;
-    box-shadow: 0px 6px 14px rgba(0,0,0,0.4);
+    margin-bottom: 16px;
+    border: 1px solid var(--card-border);
 }
 
 /* Movie title */
 .movie-title {
     font-size: 20px;
     font-weight: bold;
-    color: #f9fafb !important;
 }
 
-/* Movie rating */
+/* Rating text */
 .movie-rating {
-    color: #10b981;
     font-weight: bold;
-    margin-top: 6px;
+    opacity: 0.9;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -74,7 +72,7 @@ h1, h3 {
 # HEADER
 # ======================================================
 st.markdown("<h1>🎬 Movie Recommendation System</h1>", unsafe_allow_html=True)
-st.markdown("<h3>Hybrid Recommendation Dashboard (FBDA)</h3>", unsafe_allow_html=True)
+st.markdown("<h3>Hybrid Recommendation Dashboard (FBDAP)</h3>", unsafe_allow_html=True)
 st.divider()
 
 # ======================================================
@@ -120,7 +118,7 @@ c3.metric("⭐ Avg Rating", round(data["rating"].mean(), 2))
 st.divider()
 
 # ======================================================
-# USER-ITEM MATRIX (COLLABORATIVE FILTERING)
+# USER-ITEM MATRIX
 # ======================================================
 user_item = data.pivot_table(
     index="userId",
@@ -142,10 +140,10 @@ def get_movie_poster(title):
         query = clean_title(title)
         url = "https://api.themoviedb.org/3/search/movie"
         params = {"api_key": TMDB_API_KEY, "query": query}
-        res = requests.get(url, params=params, timeout=5).json()
+        r = requests.get(url, params=params, timeout=5).json()
 
-        if res.get("results"):
-            poster = res["results"][0].get("poster_path")
+        if r.get("results"):
+            poster = r["results"][0].get("poster_path")
             if poster:
                 return f"https://image.tmdb.org/t/p/w500{poster}"
     except:
@@ -153,7 +151,7 @@ def get_movie_poster(title):
     return FALLBACK_POSTER
 
 # ======================================================
-# SIDEBAR CONTROLS
+# SIDEBAR
 # ======================================================
 with st.sidebar:
     st.header("⚙️ Controls")
@@ -257,10 +255,10 @@ with tab3:
     - Content-Based Filtering (Genres)
     - Collaborative Filtering (User Ratings)
     - Cosine Similarity
-    - TMDB API for movie posters
+    - TMDB API for posters
     - Interactive Plotly visualizations
 
-    Built for **Foundations of Big Data Analytics with Python (FBDA)**.
+    Developed for **Foundations of Big Data Analytics with Python (FBDA)**.
     """)
 
 # ======================================================
@@ -268,7 +266,7 @@ with tab3:
 # ======================================================
 st.divider()
 st.markdown(
-    "<p style='text-align:center;color:#9ca3af;'>"
+    "<p style='text-align:center; opacity:0.7;'>"
     "Hybrid Recommendation Dashboard | FBDA Project"
     "</p>",
     unsafe_allow_html=True
