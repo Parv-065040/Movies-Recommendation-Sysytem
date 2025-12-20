@@ -45,6 +45,12 @@ h3 { text-align:center; color:#374151; }
     color:#047857;
     font-weight:bold;
 }
+.result-header {
+    font-size:22px;
+    font-weight:700;
+    color:#1f2937;
+    margin-bottom:20px;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -52,7 +58,7 @@ h3 { text-align:center; color:#374151; }
 # HEADER
 # ======================================================
 st.markdown("<h1>🎬 Movie Recommendation System</h1>", unsafe_allow_html=True)
-st.markdown("<h3>Hybrid Recommendation Dashboard (FBDAP)</h3>", unsafe_allow_html=True)
+st.markdown("<h3>Hybrid Recommendation Dashboard (FBDA)</h3>", unsafe_allow_html=True)
 st.divider()
 
 # ======================================================
@@ -106,7 +112,7 @@ user_item = data.pivot_table(
 item_similarity = cosine_similarity(csr_matrix(user_item.values).T)
 
 # ======================================================
-# POSTER FETCH (ROBUST)
+# POSTER FETCH
 # ======================================================
 def clean_title(title):
     return re.sub(r"\(\d{4}\)", "", title).strip()
@@ -134,7 +140,7 @@ with st.sidebar:
     st.header("⚙️ Controls")
     genre = st.selectbox("Select Genre", sorted(genre_cols[1:]))
     alpha = st.slider("Content vs Collaborative Weight", 0.0, 1.0, 0.6)
-    top_n = st.slider("Recommendations", 3, 10, 5)
+    top_n = st.slider("Number of Recommendations", 3, 10, 5)
 
 # ======================================================
 # HYBRID RECOMMENDER
@@ -164,7 +170,7 @@ def hybrid_recommendation(genre, alpha, top_n):
     return hybrid.sort_values("hybrid_score", ascending=False).head(top_n)
 
 # ======================================================
-# TABS (INTERACTIVE DASHBOARD)
+# TABS
 # ======================================================
 tab1, tab2, tab3 = st.tabs(
     ["🎯 Hybrid Recommendations", "📊 Data Insights", "ℹ️ About"]
@@ -172,8 +178,15 @@ tab1, tab2, tab3 = st.tabs(
 
 # ---------------- TAB 1 ----------------
 with tab1:
-    if st.button("🚀 Generate Recommendations"):
+    generate = st.button("🚀 Generate Recommendations")
+
+    if generate:
         results = hybrid_recommendation(genre, alpha, top_n)
+
+        st.markdown(
+            f"<div class='result-header'>🎬 Top {top_n} {genre} Movies Recommended for You</div>",
+            unsafe_allow_html=True
+        )
 
         for i, row in results.iterrows():
             poster = get_movie_poster(row["title"])
@@ -185,7 +198,7 @@ with tab1:
                 st.markdown(
                     f"""
                     <div class="movie-card">
-                        <div class="movie-title">#{i+1} 🎬 {row['title']}</div>
+                        <div class="movie-title">#{i+1} {row['title']}</div>
                         <div class="movie-rating">
                             ⭐ Rating: {row['avg_rating']:.2f}<br>
                             🔀 Hybrid Score: {row['hybrid_score']:.3f}
@@ -222,14 +235,14 @@ with tab2:
 with tab3:
     st.markdown("""
     ### 📌 About the Project
-    This dashboard demonstrates a **Hybrid Recommendation System** combining:
+    This dashboard implements a **Hybrid Recommendation System** combining:
     - Content-Based Filtering (Genres)
     - Collaborative Filtering (User Ratings)
     - Cosine Similarity
-    - External API integration (TMDB Posters)
-    - Interactive visualization using Plotly
+    - TMDB API integration for posters
+    - Interactive Plotly visualizations
 
-    Built as part of **Foundations of Big Data Analytics with Python (FBDA)**.
+    Developed for **Foundations of Big Data Analytics with Python (FBDA)**.
     """)
 
 # ======================================================
