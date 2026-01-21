@@ -1,57 +1,131 @@
-# 🎬 Movie Recommendation System  
-### Foundations of Big Data Analytics with Python (FBDA)
+# Movie Recommendation System (Hybrid Recommender)
+
+An interactive and explainable **Hybrid Movie Recommendation System** developed using **Python, Streamlit, and Machine Learning**. The system combines **Content-Based Filtering** and **Collaborative Filtering** techniques to recommend movies based on genre preferences and user rating behavior.
 
 ---
 
-## 📌 Project Overview
-This project implements a **Movie Recommendation System** using the **MovieLens 100K dataset** as part of the *Foundations of Big Data Analytics with Python (FBDA)* course.  
-The system demonstrates key recommendation techniques including **Collaborative Filtering, Content-Based Filtering, Matrix Factorization**, and **Cosine Similarity**, along with a **Streamlit-based deployment**.
+## Project Overview
+
+This project was developed as part of the **Foundations of Big Data Analytics Using Python (FBDAP)** course. It demonstrates the end-to-end design of a recommendation system, including data processing, similarity computation, hybrid scoring, and interactive visualization.
+
+The application enables users to:
+
+* Select a preferred movie genre
+* Adjust the balance between content-based and collaborative filtering
+* Generate top-N movie recommendations
+* View explanations for each recommendation
+* Export recommendations in CSV format
 
 ---
 
-## 🎯 Objectives
-- Build an end-to-end recommendation system
-- Apply collaborative and content-based filtering techniques
-- Use matrix factorization for latent feature learning
-- Deploy an interactive recommendation dashboard using Streamlit
-- Work with real-world data sourced directly from Kaggle
+## Key Features
+
+* **Hybrid Recommendation Engine**
+
+  * Content-Based Filtering using movie genres
+  * Collaborative Filtering using cosine similarity on user ratings
+
+* **Interactive User Controls**
+
+  * Genre selection
+  * Adjustable hybrid weight (α)
+  * Configurable number of recommendations
+
+* **Explainable Recommendations**
+
+  * Transparent logic explaining why each movie is recommended
+
+* **External API Integration**
+
+  * Movie poster retrieval using the TMDB API
+
+* **Analytics Dashboard**
+
+  * Rating distribution analysis
+  * Genre popularity insights
+
+* **Data Export**
+
+  * CSV download for further analysis or reporting
 
 ---
 
-## 🧠 Techniques Used
-- **Collaborative Filtering (Item-Based)**
-- **Matrix Factorization (SVD)**
-- **Cosine Similarity**
-- **Text Embedding (TF-IDF)**
-- **Streamlit Web Application**
+## Technology Stack
+
+* **Programming Language:** Python
+* **Framework:** Streamlit
+* **Data Processing:** Pandas, NumPy
+* **Machine Learning:** Scikit-learn
+* **Visualization:** Plotly
+* **Similarity Metric:** Cosine Similarity
+* **API:** The Movie Database (TMDB)
 
 ---
 
-## 📂 Dataset
-- **Source:** Kaggle – MovieLens 100K Dataset  
-- **Link:** https://www.kaggle.com/datasets/prajitdatta/movielens-100k-dataset  
-- **Sample Size Used:** 10,001 records (as per project guidelines)
+## Dataset
+
+* **MovieLens 100K Dataset**
+
+  * `u.data`: User–movie ratings
+  * `u.item`: Movie metadata and genre information
 
 ---
 
-## 👥 Group Details
-| Roll Number |
-|------------|
-| 065024 |
-| 065040 |
-| 065060 |
+## Recommendation Methodology
 
-**Group ID:** 244060  
-*(Used as random seed and dataset sampler across the project)*
+### Content-Based Filtering
+
+* Uses genre information from movie metadata
+* Scores movies based on their average user ratings
+
+### Collaborative Filtering
+
+* Constructs a user–item rating matrix
+* Computes item-to-item similarity using cosine similarity
+
+### Hybrid Scoring Formula
+
+```
+Hybrid Score = α × Content Score + (1 − α) × Collaborative Score
+```
+
+Where:
+
+* **α** controls the trade-off between content-based and collaborative filtering
 
 ---
 
-## 🚀 Deployment
-The application is deployed using **Streamlit Community Cloud**, providing a stable and publicly accessible interface.
+## Business and Practical Applications
 
-**Live Application Link:**  
-👉 *[Paste your Streamlit app URL here]*
+* Personalized recommendations for OTT platforms
+* Improved user engagement through data-driven content suggestions
+* Demonstrates real-world recommender system implementation
 
 ---
 
-## 🛠️ Project Structure
+## Academic Context
+
+* **Course:** Foundations of Big Data Analytics Using Python (FBDAP)
+* **Project Type:** Academic and Portfolio Project
+
+---
+
+## Author
+
+Parv 
+Awantika Kholia
+Ditsya Banerjee
+PGDM – Big Data Analytics and Marketing
+
+---
+
+## Future Scope
+
+* User-specific personalization
+* Advanced recommendation techniques such as matrix factorization
+* Real-time recommendation updates
+* Deployment on cloud platforms
+
+---
+
+This project is intended for academic learning and portfolio demonstration purposes.
