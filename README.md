@@ -112,9 +112,9 @@ Where:
 
 ## Author
 
-Parv 
-Awantika Kholia
-Ditsya Banerjee
+*Parv 
+*Awantika Kholia
+*Ditsya Banerjee
 PGDM – Big Data Analytics and Marketing
 
 ---
